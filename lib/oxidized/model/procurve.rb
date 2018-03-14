@@ -2,7 +2,7 @@ class Procurve < Oxidized::Model
 
   # some models start lines with \r
   # previous command is repeated followed by "\eE", which sometimes ends up on last line
-  prompt /^\r?([\w.-]+# )$/
+  prompt /^\r?([\w.-]+[#>]\s?)$/
 
   comment  '! '
 
@@ -75,12 +75,27 @@ class Procurve < Oxidized::Model
   cmd 'show running-config'
 
   cfg :telnet do
-    username /Username:/
+    username /Name:|Username:/
     password /Password:/
   end
 
   cfg :telnet, :ssh do
-    post_login 'no page'
+    if vars :enable
+      post_login do
+        send "enable\n"
+        send vars(:enable) + "\n"
+        send "no page\n"
+      end
+    elsif vars :login
+      post_login do
+        send "enable\n"
+        send vars(:login) + "\n"
+        send vars(:pwd) + "\n"
+        send "no page\n"
+      end
+    else
+      post_login 'no page'
+    end
     pre_logout "logout\ny\nn"
   end
 
